@@ -1,4 +1,6 @@
 import streamlit as st
+import requests
+import pandas as pd
 from snowflake.snowpark.functions import col
 
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
@@ -53,3 +55,33 @@ if ingredients_list:
                 "Your Smoothie is ordered, " + name_on_order + "!",
                 icon="✅"
             )
+
+# SmoothieFroot API
+st.subheader("SmoothieFroot API - Watermelon")
+
+try:
+    smoothiefroot_response = requests.get(
+        "https://my.smoothiefroot.com/api/fruit/watermelon",
+        timeout=15
+    )
+
+    st.text(smoothiefroot_response)
+
+    smoothiefroot_response.raise_for_status()
+
+    smoothiefroot_data = smoothiefroot_response.json()
+
+    st.json(smoothiefroot_data)
+
+    sf_df = pd.json_normalize(smoothiefroot_data)
+
+    st.dataframe(
+        sf_df,
+        use_container_width=True
+    )
+
+except requests.RequestException as error:
+    st.error(f"SmoothieFroot API error: {error}")
+
+except ValueError as error:
+    st.error(f"Invalid API JSON response: {error}")
