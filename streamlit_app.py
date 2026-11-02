@@ -16,12 +16,11 @@ session = st.connection("snowflake").session()
 
 my_dataframe = session.table(
     "SMOOTHIES.PUBLIC.FRUIT_OPTIONS"
-).select(col("FRUIT_NAME"))
+).select(col("FRUIT_NAME"), col("SEARCH_ON"))
 
-fruit_names = [
-    row["FRUIT_NAME"]
-    for row in my_dataframe.collect()
-]
+pd_df = my_dataframe.to_pandas()
+
+fruit_names = pd_df["FRUIT_NAME"].tolist()
 
 ingredients_list = st.multiselect(
     "Choose up to 5 ingredients:",
@@ -35,6 +34,19 @@ if ingredients_list:
     st.write(ingredients_string)
 
     for fruit_chosen in ingredients_list:
+        search_on = pd_df.loc[
+            pd_df["FRUIT_NAME"] == fruit_chosen,
+            "SEARCH_ON"
+        ].iloc[0]
+
+        st.write(
+            "The search value for ",
+            fruit_chosen,
+            " is ",
+            search_on,
+            "."
+        )
+
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
         try:
