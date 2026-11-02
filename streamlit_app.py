@@ -1,5 +1,4 @@
 import streamlit as st
-
 from snowflake.snowpark.functions import col
 
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
@@ -16,8 +15,6 @@ my_dataframe = session.table(
     "SMOOTHIES.PUBLIC.FRUIT_OPTIONS"
 ).select(col("FRUIT_NAME"))
 
-# st.dataframe(data=my_dataframe, use_container_width=True)
-
 fruit_names = [
     row["FRUIT_NAME"]
     for row in my_dataframe.collect()
@@ -30,21 +27,29 @@ ingredients_list = st.multiselect(
 )
 
 if ingredients_list:
-    ingredients_string = ""
-
-    for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen
+    ingredients_string = "".join(ingredients_list)
 
     st.write(ingredients_string)
 
-    my_insert_stmt = """ insert into smoothies.public.orders(ingredients, name_on_order)
-                        values ('""" + ingredients_string + """','""" + name_on_order + """')"""
-
-    st.write(my_insert_stmt)
-
     if st.button("Submit Order"):
-        session.sql(my_insert_stmt).collect()
-        st.success(
-            "Your Smoothie is ordered, " + name_on_order + "!",
-            icon="✅"
-        )
+        if not name_on_order.strip():
+            st.error("Please enter a name for your order.")
+        elif len(name_on_order.strip()) > 100:
+            st.error("The name is too long.")
+        else:
+            session.sql(
+                """
+                INSERT INTO SMOOTHIES.PUBLIC.ORDERS
+                    (INGREDIENTS, NAME_ON_ORDER)
+                VALUES (?, ?)
+                """,
+                params=[
+                    ingredients_string,
+                    name_on_order.strip()
+                ]
+            ).collect()
+
+            st.success(
+                "Your Smoothie is ordered, " + name_on_order + "!",
+                icon="✅"
+            )
