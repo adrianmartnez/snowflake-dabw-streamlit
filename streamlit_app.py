@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+from urllib.parse import quote
 from snowflake.snowpark.functions import col
 
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
@@ -33,6 +34,53 @@ if ingredients_list:
 
     st.write(ingredients_string)
 
+    for fruit_chosen in ingredients_list:
+        st.subheader(f"{fruit_chosen} Nutrition Information")
+
+        try:
+            smoothiefroot_response = requests.get(
+                "https://my.smoothiefroot.com/api/fruit/" + quote(
+                    fruit_chosen,
+                    safe=""
+                ),
+                timeout=15
+            )
+
+            st.text(smoothiefroot_response)
+
+            smoothiefroot_response.raise_for_status()
+
+            smoothiefroot_data = smoothiefroot_response.json()
+
+            st.json(smoothiefroot_data)
+
+            sf_df = pd.json_normalize(smoothiefroot_data)
+
+            st.dataframe(
+                sf_df,
+                use_container_width=True
+            )
+
+        except requests.HTTPError as error:
+            if smoothiefroot_response.status_code == 404:
+                st.warning(
+                    f"Nutrition information not found for {fruit_chosen}."
+                )
+            else:
+                st.warning(
+                    f"API error for {fruit_chosen}: {error}"
+                )
+
+        except requests.RequestException as error:
+            st.warning(
+                f"Could not retrieve nutrition data for {fruit_chosen}: {error}"
+            )
+
+        except (ValueError, TypeError) as error:
+            st.warning(
+                f"Invalid nutrition data for {fruit_chosen}: {error}"
+            )
+
     if st.button("Submit Order"):
         if not name_on_order.strip():
             st.error("Please enter a name for your order.")
@@ -55,33 +103,3 @@ if ingredients_list:
                 "Your Smoothie is ordered, " + name_on_order + "!",
                 icon="✅"
             )
-
-# SmoothieFroot API
-st.subheader("SmoothieFroot API - Watermelon")
-
-try:
-    smoothiefroot_response = requests.get(
-        "https://my.smoothiefroot.com/api/fruit/watermelon",
-        timeout=15
-    )
-
-    st.text(smoothiefroot_response)
-
-    smoothiefroot_response.raise_for_status()
-
-    smoothiefroot_data = smoothiefroot_response.json()
-
-    st.json(smoothiefroot_data)
-
-    sf_df = pd.json_normalize(smoothiefroot_data)
-
-    st.dataframe(
-        sf_df,
-        use_container_width=True
-    )
-
-except requests.RequestException as error:
-    st.error(f"SmoothieFroot API error: {error}")
-
-except ValueError as error:
-    st.error(f"Invalid API JSON response: {error}")
