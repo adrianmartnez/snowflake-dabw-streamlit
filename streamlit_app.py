@@ -29,7 +29,7 @@ ingredients_list = st.multiselect(
 )
 
 if ingredients_list:
-    ingredients_string = "".join(ingredients_list)
+    ingredients_string = " ".join(ingredients_list) + " "
 
     st.write(ingredients_string)
 
