@@ -52,7 +52,7 @@ if ingredients_list:
         try:
             smoothiefroot_response = requests.get(
                 "https://my.smoothiefroot.com/api/fruit/" + quote(
-                    fruit_chosen,
+                    search_on,
                     safe=""
                 ),
                 timeout=15
